@@ -81,36 +81,38 @@ SELECT
     C.job_name,
     '관리자' AS 구분
     FROM employee A
-    RIGHT JOIN department B ON  B.dept_id = A.dept_code
-                                            
-    RIGHT JOIN job C USING(job_code)
+    left JOIN department B ON  B.dept_id = A.dept_code
+    JOIN job C USING(job_code)
 	WHERE A.emp_id IN(SELECT 
 			distinct MANAGER_ID
                    from employee
-                  where manager_id IS NOT NULL);
-                  
--- UNION
+                  where manager_id IS NOT NULL)
+	
 
-
-
+UNION
 
 SELECT
 	A.emp_id,
     A.emp_name,
-	B.dept_title,
+ 	B.DEPT_TITLE,
     C.job_name,
     '직원' AS 구분
     FROM employee A
-	right JOIN department B ON  B.dept_id IN(SELECT
-											distinct dept_code
-                                            FROM employee
-                                            WHERE DEPT_CODE = A.DEPT_CODE or (DEPT_CODE IS NULL AND A.DEPT_CODE IS NULL))
-    LEFT JOIN job C USING(job_code)
-    WHERE manager_id IS NOT NULL
-    ORDER BY A.emp_id;
+	left JOIN department B ON B.dept_id = DEPT_CODE
+    JOIN job C USING(job_code)
+    WHERE A.emp_id NOT IN(SELECT 
+			distinct MANAGER_ID
+                   from employee
+                  where manager_id IS NOT NULL)
+	order by 구분, emp_id;
     
-    
+SELECT
+IFNULL(DEPT_CODE,null)
+FROM employee;
 
+SELECT *
+FROM employee
+where dept_code IS NULL;
 
 
 
@@ -153,5 +155,25 @@ AND ent_date IS NULL;
 
 -- 9. 급여 평균 3위 안에 드는 부서의 부서 코드와 부서명, 평균급여를 조회하세요.
 -- HINT!! limit
+SELECT
+	DEPT_CODE,
+    B.DEPT_TITLE,
+    AVG(salary) '평균급여'
+    FROM employee
+    left JOIN department B ON B.dept_id = DEPT_CODE
+    GROUP BY dept_code
+    ORDER BY AVG(salary) desc
+    limit 3;
+-- 서브쿼리를 어디다가 써야하냐
 
 -- 10. 부서별 급여 합계가 전체 급여의 총 합의 20%보다 많은 부서의 부서명과, 부서별 급여 합계를 조회하세요.
+SELECT
+    B.DEPT_TITLE,
+    SUM(salary)
+    FROM employee
+    left JOIN department B ON B.dept_id = DEPT_CODE
+    GROUP BY dept_code
+    HAVING SUM(salary) > (SELECT
+ 							SUM(salary)
+ 							FROM employee)/5;
+    
